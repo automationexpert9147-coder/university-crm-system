@@ -17,13 +17,17 @@ export const SocketProvider = ({ children }) => {
       return;
     }
 
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+    const socketUrl =
+      import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
     const newSocket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       auth: {
-        userId: user.id,
+        userId: String(user.id),
       },
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
     newSocket.on('connect', () => {
@@ -46,6 +50,7 @@ export const SocketProvider = ({ children }) => {
       newSocket.off('online_users');
       newSocket.off('disconnect');
       newSocket.disconnect();
+
       setSocket(null);
       setOnlineUsers([]);
     };
