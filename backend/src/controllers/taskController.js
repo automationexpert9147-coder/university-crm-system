@@ -1,5 +1,5 @@
 const supabase = require('../config/supabase');
-const notifyAdmins = require('../utils/notifyAdmins');
+const notifyAdmins = require('../utils/notifyadmins');
 
 exports.createTask = async (req, res) => {
   try {
