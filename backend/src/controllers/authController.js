@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const supabase = require('../config/supabase');
-const notifyAdmins = require('../utils/notifyAdmins');
+const notifyAdmins = require('../utils/notifyadmins');
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {

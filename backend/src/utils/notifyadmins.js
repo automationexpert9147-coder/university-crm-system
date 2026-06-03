@@ -1,21 +1,29 @@
 const supabase = require('../config/supabase');
 
-const notifyAdmins = async ({
-  senderId = null,
-  type = 'general',
-  title,
-  message,
-  io = null,
-  excludeUserId = null,
-}) => {
+const notifyAdmins = async (...args) => {
   try {
-    if (!title || !message) return { success: false, count: 0 };
+    let req = null;
+    let payload = {};
+
+    if (args.length === 2) {
+      req = args[0];
+      payload = args[1] || {};
+    } else {
+      payload = args[0] || {};
+    }
+
+    const {
+      senderId = null,
+      type = 'announcement',
+      title = 'New Notification',
+      message = '',
+      excludeUserId = null,
+    } = payload;
 
     let query = supabase
       .from('users')
       .select('id')
-      .eq('role', 'admin')
-      .eq('is_active', true);
+      .eq('role', 'admin');
 
     if (excludeUserId) {
       query = query.neq('id', excludeUserId);
@@ -26,7 +34,10 @@ const notifyAdmins = async ({
     if (adminError) throw adminError;
 
     if (!admins || admins.length === 0) {
-      return { success: true, count: 0 };
+      return {
+        success: true,
+        count: 0,
+      };
     }
 
     const notifications = admins.map((admin) => ({
@@ -38,15 +49,17 @@ const notifyAdmins = async ({
       is_read: false,
     }));
 
-    const { error: notificationError } = await supabase
+    const { error: insertError } = await supabase
       .from('notifications')
       .insert(notifications);
 
-    if (notificationError) throw notificationError;
+    if (insertError) throw insertError;
+
+    const io = req?.io;
 
     if (io) {
       admins.forEach((admin) => {
-        io.to(admin.id).emit('notification', {
+        io.to(String(admin.id)).emit('notification', {
           type,
           title,
           message,
@@ -54,10 +67,17 @@ const notifyAdmins = async ({
       });
     }
 
-    return { success: true, count: admins.length };
+    return {
+      success: true,
+      count: admins.length,
+    };
   } catch (err) {
     console.error('Notify admins error:', err.message);
-    return { success: false, count: 0, error: err.message };
+
+    return {
+      success: false,
+      message: err.message,
+    };
   }
 };
 
